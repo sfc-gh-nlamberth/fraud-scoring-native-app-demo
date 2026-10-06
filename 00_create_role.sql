@@ -5,13 +5,12 @@
 -- MANAGE GRANTS, and the privileges granted below), before running anything
 -- else in this repo.
 
-SET demo_name = '<YOUR_NAME>'; -- replace with a name, e.g. FRAUD_DEMO; used for both the role and the warehouse
-SET demo_user_name = CURRENT_USER();
+SET USER_NAME = CURRENT_USER();
 
-CREATE ROLE IF NOT EXISTS IDENTIFIER($demo_name)
+CREATE ROLE IF NOT EXISTS FRAUD_DEMO
   COMMENT = 'Runs the fraud-scoring-native-app-demo scripts (demo_api/ and native_app/).';
 
-CREATE WAREHOUSE IF NOT EXISTS IDENTIFIER($demo_name)
+CREATE WAREHOUSE IF NOT EXISTS FRAUD_DEMO
   WAREHOUSE_SIZE = 'XSMALL'
   AUTO_SUSPEND = 60
   AUTO_RESUME = TRUE
@@ -20,16 +19,16 @@ CREATE WAREHOUSE IF NOT EXISTS IDENTIFIER($demo_name)
 -- demo_api/: lets the role create fraud_score_native_app_demo and everything
 -- inside it (schema, table, procs); ownership of the database carries the
 -- privileges needed for the schema/table/procedure DDL in that folder.
-GRANT CREATE DATABASE ON ACCOUNT TO ROLE IDENTIFIER($demo_name);
+GRANT CREATE DATABASE ON ACCOUNT TO ROLE FRAUD_DEMO;
 
 -- native_app/: lets the role create and install the Native App. Ownership of
 -- the resulting application package/application carries the privileges
 -- needed to grant the mock API's USAGE grants to the installed app.
-GRANT CREATE APPLICATION PACKAGE ON ACCOUNT TO ROLE IDENTIFIER($demo_name);
-GRANT CREATE APPLICATION ON ACCOUNT TO ROLE IDENTIFIER($demo_name);
+GRANT CREATE APPLICATION PACKAGE ON ACCOUNT TO ROLE FRAUD_DEMO;
+GRANT CREATE APPLICATION ON ACCOUNT TO ROLE FRAUD_DEMO;
 
 -- warehouse to run the SQL/Python statements in both folders
-GRANT USAGE, OPERATE ON WAREHOUSE IDENTIFIER($demo_name) TO ROLE IDENTIFIER($demo_name);
+GRANT USAGE, OPERATE ON WAREHOUSE FRAUD_DEMO TO ROLE FRAUD_DEMO;
 
 -- let the current user switch into the role
-GRANT ROLE IDENTIFIER($demo_name) TO USER IDENTIFIER($demo_user_name);
+GRANT ROLE FRAUD_DEMO TO USER IDENTIFIER($demo_user_name);
