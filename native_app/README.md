@@ -44,8 +44,7 @@ explicit access to it (Native Apps can't see objects outside themselves or
 their references by default):
 
 ```sql
-SET demo_name = '<YOUR_NAME>'; -- same name used in 00_create_role.sql
-USE ROLE IDENTIFIER($demo_name);
+USE ROLE FRAUD_ROLE;
 
 GRANT USAGE ON DATABASE fraud_score_native_app_demo TO APPLICATION fraud_app;
 GRANT USAGE ON SCHEMA fraud_score_native_app_demo.demo_schema TO APPLICATION fraud_app;
@@ -60,8 +59,7 @@ consistent with future stream/task versions is recommended). Bind the
 reference and set the column mapping:
 
 ```sql
-SET demo_name = '<YOUR_NAME>'; -- same name used in 00_create_role.sql
-USE ROLE IDENTIFIER($demo_name);
+USE ROLE FRAUD_ROLE;
 
 CALL fraud_app.app_schema.register_table_callback(
   'consumer_customer_table', 'ADD',
@@ -78,8 +76,8 @@ CALL fraud_app.app_schema.run_scoring();
 
 ## Prerequisites
 
-- `../00_create_role.sql` has been run, and you're using the resulting role
-  (the name you chose) for the deployment statements below.
+- `../00_create_role.sql` has been run, and you're using the resulting
+  `FRAUD_ROLE` role for the deployment statements below.
 - `fraud_score_native_app_demo.demo_schema.mock_fraud_scorer` must already
   exist (see `../procs/mock_fraud_scorer.sql`).
 - A customer table with an email and/or phone column to bind as

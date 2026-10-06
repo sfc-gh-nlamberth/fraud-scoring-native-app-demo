@@ -7,9 +7,9 @@ account/trial: no external endpoints, Docker, or SPCS required.
 
 ## What's in this repo
 
-- `00_create_role.sql`: creates a demo role and warehouse (both using a
-  single name you choose) with every privilege needed to run the scripts in
-  `demo_api/` and the deployment statements in `native_app/`.
+- `00_create_role.sql`: creates a demo role and warehouse named `FRAUD_ROLE`
+  with every privilege needed to run the scripts in `demo_api/` and the
+  deployment statements in `native_app/`.
 - `demo_api/`: the mock fraud-scoring API the app calls, plus synthetic sample
   data. In a real deployment this would be replaced by an actual external API
   (for example, called through an SPCS gateway + External Access Integration).
@@ -38,25 +38,23 @@ are editable and runnable directly from that workspace.
 
 ## 2. Create the demo role and warehouse
 
-Open `00_create_role.sql` in the workspace, replace `<YOUR_NAME>` with a name
-of your choice (e.g. `FRAUD_DEMO`), select all, and run it as `ACCOUNTADMIN`.
-This creates a role and a warehouse both using that name, grants the role
-everything used in the rest of this guide, and grants the role to your
+Open `00_create_role.sql` in the workspace, select all, and run it as
+`ACCOUNTADMIN`. This creates the `FRAUD_ROLE` role and warehouse, grants the
+role everything used in the rest of this guide, and grants the role to your
 current user.
 
 Switch to the role for every step from here on:
 
 ```sql
-USE ROLE <the name you chose>; -- e.g. USE ROLE FRAUD_DEMO;
+USE ROLE FRAUD_ROLE;
 ```
 
 ## 3. Create the mock fraud-scoring API
 
 In the workspace's file browser, open `demo_api/mock_fraud_scorer.sql`,
-replace `<YOUR_NAME>` with the same name you used in `00_create_role.sql`,
 select all, and run. Repeat for `demo_api/seed_synthetic_customers.sql`.
-Both scripts already include `USE ROLE` and `USE WAREHOUSE` statements using
-that name.
+Both scripts already include `USE ROLE` and `USE WAREHOUSE` statements for
+`FRAUD_ROLE`.
 
 This creates `fraud_score_native_app_demo.demo_schema` with:
 - `synthetic_customers`: 1,000 rows with alternating email/phone identifiers,
@@ -70,7 +68,7 @@ This creates `fraud_score_native_app_demo.demo_schema` with:
 Open a new SQL file in the same workspace and run:
 
 ```sql
-USE ROLE <the name you chose>; -- e.g. USE ROLE FRAUD_DEMO;
+USE ROLE FRAUD_ROLE;
 
 CREATE APPLICATION PACKAGE IF NOT EXISTS fraud_app_pkg;
 ```
@@ -96,7 +94,7 @@ CREATE APPLICATION fraud_app
 The app can't see objects outside itself by default:
 
 ```sql
-USE ROLE <the name you chose>; -- e.g. USE ROLE FRAUD_DEMO;
+USE ROLE FRAUD_ROLE;
 
 GRANT USAGE ON DATABASE fraud_score_native_app_demo TO APPLICATION fraud_app;
 GRANT USAGE ON SCHEMA fraud_score_native_app_demo.demo_schema TO APPLICATION fraud_app;
