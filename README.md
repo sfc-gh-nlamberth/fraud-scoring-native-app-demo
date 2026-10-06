@@ -7,22 +7,20 @@ account/trial: no external endpoints, Docker, or SPCS required.
 
 ## What's in this repo
 
-- `00_create_role.sql`: creates `fraud_demo_role` with every privilege needed
-  to run the scripts in `demo_api/` and the deployment statements in
-  `native_app/`.
+- `00_create_role.sql`: creates a demo role and warehouse (both using a
+  single name you choose) with every privilege needed to run the scripts in
+  `demo_api/` and the deployment statements in `native_app/`.
 - `demo_api/`: the mock fraud-scoring API the app calls, plus synthetic sample
   data. In a real deployment this would be replaced by an actual external API
   (for example, called through an SPCS gateway + External Access Integration).
 - `native_app/`: the Native App itself: `manifest.yml`, `setup.sql`, and a
   Streamlit UI (Setup wizard, Dashboard, Settings).
-- `snowflake.yml`: project definition for the Snowflake CLI, if you prefer
-  `snow app run` over the Snowsight workspace path below.
 
 ## Prerequisites
 
 - A Snowflake account/trial with `ACCOUNTADMIN` (or a role with `CREATE ROLE`,
-  `MANAGE GRANTS`, `CREATE DATABASE`, `CREATE APPLICATION PACKAGE`, and
-  `CREATE APPLICATION` on the account) and a running warehouse.
+  `CREATE WAREHOUSE`, `MANAGE GRANTS`, `CREATE DATABASE`,
+  `CREATE APPLICATION PACKAGE`, and `CREATE APPLICATION` on the account).
 
 ## 1. Import this repo as a Git workspace in Snowsight
 
@@ -38,25 +36,27 @@ account/trial: no external endpoints, Docker, or SPCS required.
 Snowsight clones the repo into a Git-synced workspace, and all the files below
 are editable and runnable directly from that workspace.
 
-## 2. Create the demo role
+## 2. Create the demo role and warehouse
 
-Open `00_create_role.sql` in the workspace, replace `<YOUR_WAREHOUSE_NAME>`
-with an existing warehouse, select all, and run it as `ACCOUNTADMIN`. This
-creates `fraud_demo_role`, grants it everything used in the rest of this
-guide, and grants the role to your current user.
+Open `00_create_role.sql` in the workspace, replace `<YOUR_NAME>` with a name
+of your choice (e.g. `FRAUD_DEMO`), select all, and run it as `ACCOUNTADMIN`.
+This creates a role and a warehouse both using that name, grants the role
+everything used in the rest of this guide, and grants the role to your
+current user.
 
 Switch to the role for every step from here on:
 
 ```sql
-USE ROLE fraud_demo_role;
+USE ROLE <the name you chose>; -- e.g. USE ROLE FRAUD_DEMO;
 ```
 
 ## 3. Create the mock fraud-scoring API
 
 In the workspace's file browser, open `demo_api/mock_fraud_scorer.sql`,
-replace `your_warehouse_name` with your warehouse, select all, and run.
-Repeat for `demo_api/seed_synthetic_customers.sql`. Both scripts already
-include a `USE ROLE fraud_demo_role;` statement.
+replace `<YOUR_NAME>` with the same name you used in `00_create_role.sql`,
+select all, and run. Repeat for `demo_api/seed_synthetic_customers.sql`.
+Both scripts already include `USE ROLE` and `USE WAREHOUSE` statements using
+that name.
 
 This creates `fraud_score_native_app_demo.demo_schema` with:
 - `synthetic_customers`: 1,000 rows with alternating email/phone identifiers,
@@ -70,7 +70,7 @@ This creates `fraud_score_native_app_demo.demo_schema` with:
 Open a new SQL file in the same workspace and run:
 
 ```sql
-USE ROLE fraud_demo_role;
+USE ROLE <the name you chose>; -- e.g. USE ROLE FRAUD_DEMO;
 
 CREATE APPLICATION PACKAGE IF NOT EXISTS fraud_app_pkg;
 ```
@@ -91,16 +91,12 @@ CREATE APPLICATION fraud_app
   USING '@<repository_name>/branches/main/native_app';
 ```
 
-(If you'd rather use the Snowflake CLI locally instead of the workspace path,
-run `snow app run` from the repo root; it uses `snowflake.yml` to do the
-equivalent of the steps above.)
-
 ## 5. Grant the app access to the mock API
 
 The app can't see objects outside itself by default:
 
 ```sql
-USE ROLE fraud_demo_role;
+USE ROLE <the name you chose>; -- e.g. USE ROLE FRAUD_DEMO;
 
 GRANT USAGE ON DATABASE fraud_score_native_app_demo TO APPLICATION fraud_app;
 GRANT USAGE ON SCHEMA fraud_score_native_app_demo.demo_schema TO APPLICATION fraud_app;
