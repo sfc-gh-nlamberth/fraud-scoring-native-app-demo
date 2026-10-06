@@ -8,11 +8,14 @@ account/trial: no external endpoints, Docker, or SPCS required.
 ## What's in this repo
 
 - `00_create_role.sql`: creates a demo role and warehouse named `FRAUD_ROLE`
-  with every privilege needed to run the scripts in `demo_api/` and the
-  deployment statements in `native_app/`.
-- `demo_api/`: the mock fraud-scoring API the app calls, plus synthetic sample
-  data. In a real deployment this would be replaced by an actual external API
-  (for example, called through an SPCS gateway + External Access Integration).
+  with every privilege needed to run `01_setup.sql` and the Native App.
+- `01_setup.sql`: creates the mock fraud-scoring API and synthetic sample
+  data, deploys the Native App directly from this repo's public GitHub URL,
+  and grants the app access to the mock API. In a real deployment the mock
+  API would be replaced by an actual external API (for example, called
+  through an SPCS gateway + External Access Integration).
+- `demo_api/`: source for the mock fraud-scoring API and synthetic sample
+  data, inlined into `01_setup.sql` for convenience.
 - `native_app/`: the Native App itself: `manifest.yml`, `setup.sql`, and a
   Streamlit UI (Setup wizard, Dashboard, Settings).
 
@@ -20,7 +23,8 @@ account/trial: no external endpoints, Docker, or SPCS required.
 
 - A Snowflake account/trial with `ACCOUNTADMIN` (or a role with `CREATE ROLE`,
   `CREATE WAREHOUSE`, `MANAGE GRANTS`, `CREATE DATABASE`,
-  `CREATE APPLICATION PACKAGE`, and `CREATE APPLICATION` on the account).
+  `CREATE APPLICATION PACKAGE`, `CREATE APPLICATION`, and
+  `CREATE API INTEGRATION` on the account).
 
 ## 1. Import this repo as a Git workspace in Snowsight
 
@@ -49,59 +53,29 @@ Switch to the role for every step from here on:
 USE ROLE FRAUD_ROLE;
 ```
 
-## 3. Create the mock fraud-scoring API
+## 3. Run the setup script
 
-In the workspace's file browser, open `demo_api/mock_fraud_scorer.sql`,
-select all, and run. Repeat for `demo_api/seed_synthetic_customers.sql`.
-Both scripts already include `USE ROLE` and `USE WAREHOUSE` statements for
-`FRAUD_ROLE`.
+Open `01_setup.sql` in the workspace, select all, and run it as `FRAUD_ROLE`.
+This single script:
 
-This creates `fraud_score_native_app_demo.demo_schema` with:
-- `synthetic_customers`: 1,000 rows with alternating email/phone identifiers,
-  usable as a stand-in "customer table" for the app's Setup wizard.
-- `mock_fraud_scorer(ARRAY)`: deterministic hash-based scorer the app calls.
-- `score_synthetic_customers(NUMBER)`: optional driver to score the sample
-  table directly, without going through the app.
+- Creates `fraud_score_native_app_demo.demo_schema` with:
+  - `synthetic_customers`: 1,000 rows with alternating email/phone
+    identifiers, usable as a stand-in "customer table" for the app's Setup
+    wizard.
+  - `mock_fraud_scorer(ARRAY)`: deterministic hash-based scorer the app
+    calls.
+  - `score_synthetic_customers(NUMBER)`: optional driver to score the
+    sample table directly, without going through the app.
+- Creates an API integration and a Git repository object pointing directly
+  at this repo's public URL
+  (`https://github.com/sfc-gh-nlamberth/fraud-scoring-native-app-demo`), with
+  no dependency on the Git-synced workspace from step 1.
+- Creates the application package and installs `fraud_app` from
+  `native_app/` in that repository.
+- Grants `fraud_app` `USAGE` on the database, schema, and
+  `mock_fraud_scorer` procedure, so the app can call the mock API.
 
-## 4. Deploy the Native App from the workspace
-
-Open a new SQL file in the same workspace and run:
-
-```sql
-USE ROLE FRAUD_ROLE;
-
-CREATE APPLICATION PACKAGE IF NOT EXISTS fraud_app_pkg;
-```
-
-Then find the Git repository object backing this workspace (Snowsight creates
-one automatically when the workspace was created):
-
-```sql
-SHOW GIT REPOSITORIES LIKE '%fraud%';
-```
-
-Use the resulting repository name to install the app directly from the
-workspace's cloned files, no manual file upload required:
-
-```sql
-CREATE APPLICATION fraud_app
-  FROM APPLICATION PACKAGE fraud_app_pkg
-  USING '@<repository_name>/branches/main/native_app';
-```
-
-## 5. Grant the app access to the mock API
-
-The app can't see objects outside itself by default:
-
-```sql
-USE ROLE FRAUD_ROLE;
-
-GRANT USAGE ON DATABASE fraud_score_native_app_demo TO APPLICATION fraud_app;
-GRANT USAGE ON SCHEMA fraud_score_native_app_demo.demo_schema TO APPLICATION fraud_app;
-GRANT USAGE ON PROCEDURE fraud_score_native_app_demo.demo_schema.mock_fraud_scorer(ARRAY) TO APPLICATION fraud_app;
-```
-
-## 6. Open the app and run Setup
+## 4. Open the app and run Setup
 
 Open `fraud_app` in Snowsight (Apps), or go directly to the Streamlit UI
 (`fraud_app.app_schema.fraud_scoring_ui`). In the **Setup** page:
