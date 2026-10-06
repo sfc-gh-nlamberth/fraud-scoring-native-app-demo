@@ -37,9 +37,12 @@ This creates the application package, uploads artifacts, and installs the
 app in the current connection's account.
 
 If `snow app run` isn't usable (e.g. stale CLI session token), the app can be
-deployed manually via SQL:
+deployed manually via SQL (run `../00_create_role.sql` first, then use that
+role here):
 
 ```sql
+USE ROLE fraud_demo_role;
+
 CREATE APPLICATION PACKAGE IF NOT EXISTS fraud_app_pkg;
 CREATE SCHEMA IF NOT EXISTS fraud_app_pkg.app_src;
 CREATE STAGE IF NOT EXISTS fraud_app_pkg.app_src.stage;
@@ -62,6 +65,8 @@ explicit access to it (Native Apps can't see objects outside themselves or
 their references by default):
 
 ```sql
+USE ROLE fraud_demo_role;
+
 GRANT USAGE ON DATABASE fraud_score_native_app_demo TO APPLICATION fraud_app;
 GRANT USAGE ON SCHEMA fraud_score_native_app_demo.demo_schema TO APPLICATION fraud_app;
 GRANT USAGE ON PROCEDURE fraud_score_native_app_demo.demo_schema.mock_fraud_scorer(ARRAY) TO APPLICATION fraud_app;
@@ -75,6 +80,8 @@ consistent with future stream/task versions is recommended). Bind the
 reference and set the column mapping:
 
 ```sql
+USE ROLE fraud_demo_role;
+
 CALL fraud_app.app_schema.register_table_callback(
   'consumer_customer_table', 'ADD',
   SYSTEM$REFERENCE('TABLE', '<db>.<schema>.<table>', 'PERSISTENT', 'SELECT')
@@ -90,6 +97,8 @@ CALL fraud_app.app_schema.run_scoring();
 
 ## Prerequisites
 
+- `../00_create_role.sql` has been run, and you're using the resulting
+  `fraud_demo_role` for the deployment statements below.
 - `fraud_score_native_app_demo.demo_schema.mock_fraud_scorer` must already
   exist (see `../procs/mock_fraud_scorer.sql`).
 - A customer table with an email and/or phone column to bind as

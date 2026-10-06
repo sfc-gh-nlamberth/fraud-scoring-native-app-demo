@@ -1,6 +1,9 @@
 -- Seeds 1,000 synthetic customers with alternating email/phone identifiers.
 -- Run after mock_fraud_scorer.sql.
+-- Run 00_create_role.sql first and use that role here.
 
+USE ROLE fraud_demo_role;
+USE WAREHOUSE your_warehouse_name; -- replace with the warehouse granted in 00_create_role.sql
 USE SCHEMA fraud_score_native_app_demo.demo_schema;
 
 INSERT INTO synthetic_customers (customer_id, identifier, identifier_type)

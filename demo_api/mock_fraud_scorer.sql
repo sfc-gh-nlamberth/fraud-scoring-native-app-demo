@@ -1,5 +1,9 @@
 -- Mock fraud-scoring API: stands in for a real external fraud-scoring service.
 -- Run this once in a trial account before deploying the Native App (native_app/).
+-- Run 00_create_role.sql first and use that role here.
+
+USE ROLE fraud_demo_role;
+USE WAREHOUSE your_warehouse_name; -- replace with the warehouse granted in 00_create_role.sql
 
 CREATE DATABASE IF NOT EXISTS fraud_score_native_app_demo;
 CREATE SCHEMA IF NOT EXISTS fraud_score_native_app_demo.demo_schema;
