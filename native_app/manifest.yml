@@ -1,0 +1,19 @@
+manifest_version: 2
+
+artifacts:
+  setup_script: setup.sql
+  readme: README.md
+
+configuration:
+  log_level: INFO
+  trace_level: ON_EVENT
+
+references:
+  - consumer_customer_table:
+      label: "Customer Table"
+      description: "Your table containing email and/or phone identifiers to score"
+      privileges:
+        - SELECT
+      object_type: TABLE
+      multi_valued: false
+      register_callback: app_schema.register_table_callback
