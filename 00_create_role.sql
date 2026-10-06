@@ -5,6 +5,7 @@
 -- MANAGE GRANTS, and the privileges granted below), before running anything
 -- else in this repo.
 
+USE ROLE ACCOUNTADMIN;
 SET USER_NAME = CURRENT_USER();
 
 CREATE ROLE IF NOT EXISTS FRAUD_DEMO
